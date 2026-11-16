@@ -1,6 +1,6 @@
 # Homebrew Tap and Download Worker
 
-This repository holds the Homebrew Casks and a Cloudflare Worker that streams application installers from the `cdn` R2 bucket. The Worker is read-only: it serves only objects under the `homebrew/` key prefix and does not list, upload, or delete bucket contents.
+This repository holds the Homebrew Casks and a Cloudflare Worker that streams application installers from the `cdn` R2 bucket. The Worker is read-only: it serves only objects under the `homebrew/applications/` key prefix and does not list, upload, or delete bucket contents.
 
 ## Download URL and R2 layout
 
@@ -18,7 +18,7 @@ homebrew/applications/<app>/<version>/<filename>
 
 For example, `GET /v1/downloads/example-app/1.2.3/Example-1.2.3.dmg` reads `homebrew/applications/example-app/1.2.3/Example-1.2.3.dmg`. Requests are limited to one filename below this prefix; path traversal, query strings, writes, and bucket listing are not supported. Versioned downloads support byte ranges, conditional requests, and immutable caching.
 
-The Cloudflare R2 bucket `cdn` currently contains website assets and post images, but no Homebrew installers. Upload each installer under the layout above before adding its Cask. The separate `cdn` repository in this workspace still defines AWS S3 and CloudFront infrastructure; this Worker binds to the Cloudflare R2 bucket named `cdn`.
+The Suohai 0.1.0 installer is staged in the separate CDN repository at `cdn/src/homebrew/applications/suohai/0.1.0/Suohai.dmg`. Manually upload that file to the identical R2 key before the Cask download will work. The separate `cdn` repository in this workspace still defines AWS S3 and CloudFront infrastructure; this Worker binds to the Cloudflare R2 bucket named `cdn`.
 
 ## Local development
 
@@ -31,9 +31,9 @@ Wrangler uses a local R2 binding by default. To test against the deployed bucket
 
 ## Casks
 
-Add Cask definitions under `Casks/` only when the corresponding installer is present in R2 and its SHA-256 checksum is known. See [Casks/README.md](Casks/README.md) for the object layout and URL pattern. The current app catalog links to App Store pages and does not provide downloadable installers, so this scaffold does not invent Cask versions or checksums.
+The `suohai` Cask installs Suohai 0.1.0 from `https://homebrew.lbenicio.dev`. See [Casks/README.md](Casks/README.md) for the staged file and matching R2 object key. Add future Casks only with real installers and verified SHA-256 checksums.
 
-Once this repository exists on GitHub, its deployment workflow uses the `CLOUDFLARE_API_TOKEN` GitHub Secret to deploy `wrangler.jsonc` on pushes to `main`. Pull requests run the TypeScript check without access to deployment secrets. The Worker is configured for its `workers.dev` hostname; a custom domain can be attached separately.
+The Worker is configured for the custom domain `homebrew.lbenicio.dev` and the account's `workers.dev` hostname. Cloudflare will create the custom-domain DNS record when the Worker is deployed. Once this repository exists on GitHub, its deployment workflow uses the `CLOUDFLARE_API_TOKEN` GitHub Secret to deploy `wrangler.jsonc` on pushes to `main`. Pull requests run the TypeScript check without access to deployment secrets.
 
 ## Commands
 
