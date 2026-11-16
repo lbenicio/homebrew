@@ -7,6 +7,7 @@ All notable changes to this project are documented here.
 ### Added
 
 - Add the Suohai `0.1.0` Cask with a SHA-256-pinned download from the R2-backed Worker.
+- Add the SlowQuitApps `0.8.2` Cask with a SHA-256-pinned download from the R2-backed Worker.
 
 ## [0.1.0] - 2026-11-15
 

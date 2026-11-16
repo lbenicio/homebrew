@@ -22,6 +22,16 @@ https://homebrew.lbenicio.dev/v1/downloads/<app>/<version>/<filename>
 
 Use the deployed Worker hostname in each Cask URL. Keep app slugs, version path segments, and filenames URL-safe. See the [Homebrew Cask Cookbook](https://docs.brew.sh/Cask-Cookbook) for Cask stanzas and artifact syntax.
 
+## SlowQuitApps
+
+The `slowquitapps` Cask installs version `0.8.2`. Its signed DMG is staged at:
+
+```text
+cdn/src/homebrew/applications/slowquitapps/0.8.2/SlowQuitApps-0.8.2.dmg
+```
+
+Manually upload it to the matching R2 key before installing the Cask. The release requires macOS 12 or later and Accessibility permission. It is signed with Developer ID but is not notarized; macOS may warn on first launch.
+
 ## FileZilla
 
 The `Update FileZilla Cask` workflow runs weekly and can also be started manually. It reads the stable version and download links from FileZilla's official download page, verifies the Intel and Apple Silicon archives against the publisher's SHA-512 manifest, and mirrors the unchanged archives into the `cdn` R2 bucket. It then opens a pull request that adds or updates `Casks/filezilla.rb` with the pinned SHA-256 values and versioned Worker URLs.
