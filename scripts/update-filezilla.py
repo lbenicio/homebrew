@@ -52,7 +52,46 @@ class LinkParser(HTMLParser):
             self._text = []
 
 
-def fetch(url: str, referer: str | None = None) -> bytes:
+class ContentWrapperParser(HTMLParser):
+    """Collect the encrypted payload embedded in FileZilla's download page."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.wrappers: list[tuple[dict[str, str | None], str]] = []
+        self._attributes: dict[str, str | None] | None = None
+        self._depth = 0
+        self._text: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        if self._attributes is None:
+            if tag.lower() == "div" and attributes.get("id") == "contentwrapper":
+                self._attributes = attributes
+                self._depth = 1
+                self._text = []
+            return
+        if tag.lower() == "div":
+            self._depth += 1
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        # Self-closing tags do not affect the surrounding wrapper depth.
+        return
+
+    def handle_data(self, data: str) -> None:
+        if self._attributes is not None:
+            self._text.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if self._attributes is None or tag.lower() != "div":
+            return
+        self._depth -= 1
+        if self._depth == 0:
+            self.wrappers.append((self._attributes, "".join(self._text)))
+            self._attributes = None
+            self._text = []
+
+
+def fetch(url: str, referer: str | None = None, max_size: int = MAX_DOWNLOAD_SIZE) -> bytes:
     if not is_official_filezilla_url(url):
         raise RuntimeError("FileZilla published a download link outside its official domain")
     headers = {"User-Agent": "Mozilla/5.0 (compatible; HomebrewCaskUpdater/1.0)"}
@@ -70,8 +109,8 @@ def fetch(url: str, referer: str | None = None) -> bytes:
                 if not chunk:
                     break
                 size += len(chunk)
-                if size > MAX_DOWNLOAD_SIZE:
-                    raise RuntimeError("Vendor download exceeded the 200 MiB safety limit")
+                if size > max_size:
+                    raise RuntimeError("FileZilla response exceeded its safety size limit")
                 chunks.append(chunk)
             return b"".join(chunks)
     except RuntimeError:
@@ -89,9 +128,45 @@ def is_official_filezilla_url(url: str) -> bool:
     )
 
 
+def decrypt_download_page(page_bytes: bytes) -> str:
+    """Decrypt the official page's AES-CBC content wrapper using its published parameters."""
+    parser = ContentWrapperParser()
+    parser.feed(page_bytes.decode("utf-8", errors="replace"))
+    if len(parser.wrappers) != 1:
+        raise RuntimeError("Could not locate the encrypted content on FileZilla's official download page")
+
+    attributes, encoded_ciphertext = parser.wrappers[0]
+    try:
+        iv = base64.b64decode(attributes["v1"] or "", validate=True)
+        key = base64.b64decode(attributes["v2"] or "", validate=True)
+        ciphertext = base64.b64decode("".join(encoded_ciphertext.split()), validate=True)
+    except (KeyError, ValueError):
+        raise RuntimeError("FileZilla's official download page returned invalid encrypted content") from None
+
+    if len(iv) != 16 or len(key) not in {16, 24, 32} or not ciphertext or len(ciphertext) % 16:
+        raise RuntimeError("FileZilla's official download page returned invalid encrypted content")
+
+    cipher_name = f"aes-{len(key) * 8}-cbc"
+    try:
+        result = subprocess.run(
+            ["openssl", "enc", "-d", f"-{cipher_name}", "-K", key.hex(), "-iv", iv.hex(), "-nosalt"],
+            input=ciphertext,
+            check=False,
+            capture_output=True,
+        )
+    except OSError:
+        raise RuntimeError("OpenSSL is required to decode FileZilla's official download page") from None
+    if result.returncode:
+        raise RuntimeError("Could not decrypt the content on FileZilla's official download page")
+    try:
+        return result.stdout.decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        raise RuntimeError("FileZilla's official download page returned invalid encrypted content") from None
+
+
 def release_metadata() -> tuple[str, dict[str, str], str]:
-    page_bytes = fetch(DOWNLOAD_PAGE)
-    page = page_bytes.decode("utf-8", errors="replace")
+    page_bytes = fetch(DOWNLOAD_PAGE, max_size=5 * 1024 * 1024)
+    page = decrypt_download_page(page_bytes)
     text = html.unescape(re.sub(r"<[^>]+>", " ", page))
     version_match = re.search(
         r"The latest stable version of FileZilla Client is\s*([0-9]+(?:\.[0-9]+){1,3})",
