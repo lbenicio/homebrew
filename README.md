@@ -1,5 +1,7 @@
 # Homebrew Tap and Download Worker
 
+**Public repository:** This tap and its R2-backed download endpoints are public. Add only applications and builds intended for public distribution; never commit credentials or software with distribution restrictions.
+
 This repository holds the Homebrew Casks and a Cloudflare Worker that streams application installers from the `cdn` R2 bucket. The Worker is read-only: it serves only objects under the `homebrew/applications/` key prefix and does not list, upload, or delete bucket contents.
 
 ## Download URL and R2 layout
@@ -31,7 +33,7 @@ Wrangler uses a local R2 binding by default. To test against the deployed bucket
 
 ## Casks
 
-The `suohai` Cask installs Suohai 0.1.0, and the `slowquitapps` Cask installs SlowQuitApps 0.8.2 from `https://homebrew.lbenicio.dev`. FileZilla's Cask is generated and updated by the weekly workflow after it verifies and mirrors the original vendor archives. See [Casks/README.md](Casks/README.md) for staged files, R2 keys, and required GitHub Secrets. Add future Casks only with real installers and verified SHA-256 checksums.
+The `suohai` Cask installs Suohai 0.1.0, the `slowquitapps` Cask installs SlowQuitApps 0.8.2, and the `lbenicio-qlimagesize` Cask installs Quick Look Image Size 3.0 from `https://homebrew.lbenicio.dev`. The Quick Look Image Size cask currently uses an unsigned, non-notarized local build. See [Casks/README.md](Casks/README.md) for staged files and R2 keys. Add future Casks only with real installers and verified SHA-256 checksums.
 
 The Worker is configured for the custom domain `homebrew.lbenicio.dev` and the account's `workers.dev` hostname. Cloudflare will create the custom-domain DNS record when the Worker is deployed. Once this repository exists on GitHub, its deployment workflow uses the `CLOUDFLARE_API_TOKEN` GitHub Secret to deploy `wrangler.jsonc` on pushes to `main`. Pull requests run the TypeScript check without access to deployment secrets.
 

@@ -8,6 +8,8 @@ All notable changes to this project are documented here.
 
 - Add the Suohai `0.1.0` Cask with a SHA-256-pinned download from the R2-backed Worker.
 - Add the SlowQuitApps `0.8.2` Cask with a SHA-256-pinned download from the R2-backed Worker.
+- Add the Quick Look Image Size `3.0` Cask with a SHA-256-pinned download for the unsigned local build.
+- Remove the FileZilla mirroring workflow so its archives are not uploaded to the public CDN.
 
 ## [0.1.0] - 2026-11-15
 
