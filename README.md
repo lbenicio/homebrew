@@ -41,6 +41,8 @@ The Worker is configured for the custom domain `homebrew.lbenicio.dev` and the a
 
 ```sh
 npm run typecheck
+npm test
+npm run coverage
 npm run types
 npm run deploy
 ```
