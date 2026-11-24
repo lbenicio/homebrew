@@ -35,7 +35,7 @@ Wrangler uses a local R2 binding by default. To test against the deployed bucket
 
 The `suohai` Cask installs Suohai 0.1.0, the `slowquitapps` Cask installs SlowQuitApps 0.8.2, and the `lbenicio-qlimagesize` Cask installs Quick Look Image Size 3.0 from `https://homebrew.lbenicio.dev`. The Quick Look Image Size cask currently uses an unsigned, non-notarized local build. See [Casks/README.md](Casks/README.md) for staged files and R2 keys. Add future Casks only with real installers and verified SHA-256 checksums.
 
-The Worker is configured for the custom domain `homebrew.lbenicio.dev` and the account's `workers.dev` hostname. Cloudflare will create the custom-domain DNS record when the Worker is deployed. Once this repository exists on GitHub, its deployment workflow uses the `CLOUDFLARE_API_TOKEN` GitHub Secret to deploy `wrangler.jsonc` on pushes to `main`. Pull requests run the TypeScript check without access to deployment secrets.
+The Worker is configured only for the custom domain `homebrew.lbenicio.dev`. Wrangler disables both the account `workers.dev` hostname and preview URLs. Cloudflare will create the custom-domain DNS record when the Worker is deployed. Once this repository exists on GitHub, its deployment workflow uses the `CLOUDFLARE_API_TOKEN` GitHub Secret to deploy `wrangler.jsonc` on pushes to `main`. Pull requests run the TypeScript check without access to deployment secrets.
 
 ## Commands
 
